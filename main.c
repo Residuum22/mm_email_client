@@ -7,6 +7,5 @@ char PWD[40];
 
 int main(){
     menuing();
-    //curlsmtp();
     return (EXIT_SUCCESS);
 }
