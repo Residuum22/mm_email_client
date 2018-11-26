@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/GHA2018.dir/main.c.o  -o GHA2018 -lcurses -lmenu /usr/lib/x86_64-linux-gnu/libcurl.so 

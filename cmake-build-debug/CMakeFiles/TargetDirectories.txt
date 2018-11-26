@@ -1,0 +1,3 @@
+/home/mihalikmark/Desktop/Programmierung1/Hausaufgabe/GHA2018/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/mihalikmark/Desktop/Programmierung1/Hausaufgabe/GHA2018/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/mihalikmark/Desktop/Programmierung1/Hausaufgabe/GHA2018/cmake-build-debug/CMakeFiles/GHA2018.dir
