@@ -116,6 +116,7 @@ void menuing() {
     int exitFlag = 100000;
     mvprintw(LINES - 4, 4, "Status: Please Log In!");
     refresh();
+    wrefresh(menuWindow);
     pos_menu_cursor(menu);
     while ((exitFlag) && (c = wgetch(menuWindow)) != KEY_F(1)) {
         switch (c) {
@@ -177,7 +178,7 @@ void menuing() {
                     //grosshausaufgabe2018@gmail.com
                     mvprintw(LINES - 4, 4, "Status: Logged");
                     refresh();
-                } else mvprintw(LINES - 4, 4, "Status: Please Log in with a good account!");
+                }
                 pos_menu_cursor(menu);
                 refresh();
                 break;
@@ -199,15 +200,25 @@ void menuing() {
     return;
 }
 
+//ASDLéAJKDSASDJKSDJAHJHJHKKASDJHJHKASDJKHASDJHKASDJASDJHKASDJKJASDJASDJHSDKJHSDAKJHASDJKASDJHSDJHKJHKASDJHKKASDJHASDJHK
+/*
+ *
+ * kész VAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANNNNNNNNNNNNNNNNNNN
+ *
+ *
+ * */
 void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoicesLogin, chtype color,
               ITEM **loggedAccount) {
+    clear();
+
     int c;
     int i;
     char character;
     char stringLogin[] = {"Authorization"};
     print_in_middle(loginWindow, 1, (xcoord - strlen(stringLogin)) / 2, strlen(stringLogin), stringLogin, color);
-    refresh();
 
+
+    refresh();
     /* Post the menu */
     post_menu(login);
     wrefresh(loginWindow);
@@ -293,11 +304,12 @@ void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoi
 
                         curl_easy_cleanup(curl);
 
-                        if (!strcmp(bufferForError, "No error")) statusFlag = 1;
+                        if (!strcmp(bufferForError, "No error")) {
+                            statusFlag = 1;
+                            exitFlag = 0;
+                        }
                         if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged");
-                        else mvprintw(LINES - 4, 4, "Wrong E-mail address orr password!");
                     }
-                    clear();
                     print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2,
                                     (int) strlen(stringLogin),
                                     stringLogin, color);
@@ -310,6 +322,7 @@ void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoi
                 }
                 if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID);
                 if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged");
+                else mvprintw(LINES - 4, 4, "Wrong E-mail address orr password!");
                 pos_menu_cursor(login);
                 refresh();
                 break;
