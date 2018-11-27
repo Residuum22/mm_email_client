@@ -1,19 +1,13 @@
-#include <ncurses.h>
-#include <menu.h>
-#include <string.h>
-#include <stdlib.h>
-#include "smtp.h"
+#include "menus.h"
 
-#ifndef GHA2018_HOMEMENU_H
-#define GHA2018_HOMEMENU_H
-
-
-int ycoord, xcoord;
-
+int statusFlag = 0;
 char text[1000];
 char addressTo[50];
 char subjectMail[50];
-int statusFlag = 0;
+
+char *choicesMenu[];
+char *choicesLog[];
+int ycoord, xcoord;
 
 char *choicesMenu[] = {
         "Logining in Mail Account",
@@ -30,12 +24,6 @@ char *choicesLog[] = {
         (char *) NULL,
 };
 
-void sendingEmail();
-
-void print_in_middle(WINDOW *win, int starty, int startx, int width, char *string, chtype color);
-
-void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoicesLogin, chtype color,
-              ITEM **loggedAccount);
 
 void menuing() {
     UID[0] = '\0';
@@ -156,15 +144,40 @@ void menuing() {
                     refresh();
                     wrefresh(menuWindow);
                 } else if (strcmp(choicesMenu[3], buffer) == 0) {
-                    exitFlag = 0;
+                    unpost_menu(menu);
+                    char scan;
+                    int starty, startx;
+                    starty = ycoord / 2 - 4;
+                    startx = xcoord / 2 - 5;
+                    unpost_menu(login);
+                    wrefresh(loginWindow);
+                    clear();
+                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("Do you want to exit?(y/n)")) / 2, "%s",
+                             "Do you want to exit?(y/n)");
+                    move(starty, startx);
+                    while ((scan = (char) getch()) != KEY_F(1)) {
+                        if (scan == 'y' || scan == '\n') {
+                            exitFlag = 0;
+                            break;
+                        } else if (scan == 'n') {
+                            exitFlag = 1;
+                            break;
+                        }
+                    }
+                    clear();
+                    box(menuWindow, 0, 0);
+                    post_menu(menu);
+                    mvprintw(LINES - 4, 4, "Status: Please Log In!");
+                    refresh();
+                    wrefresh(menuWindow);
+
                 }
                 if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID);
                 if (statusFlag) {
                     //grosshausaufgabe2018@gmail.com
                     mvprintw(LINES - 4, 4, "Status: Logged");
                     refresh();
-                }
-                else mvprintw(LINES - 4, 4, "Status: Please Log in with a good account!");
+                } else mvprintw(LINES - 4, 4, "Status: Please Log in with a good account!");
                 pos_menu_cursor(menu);
                 refresh();
                 break;
@@ -358,12 +371,12 @@ void sendingEmail() {
         if (scan == 7) {
             if (xcoursor > startx) {
                 mvdelch(ycursor, --xcoursor);
-                text[--counter] =  '\0';
+                text[--counter] = '\0';
             } else if (xcoursor == startx && ycursor > starty + 1) {
                 ycursor--;
                 xcoursor = xcoord - 4;
                 mvdelch(ycursor, xcoursor);
-                text[--counter] =  '\0';
+                text[--counter] = '\0';
             }
         } else {
             mvaddch(ycursor, xcoursor++, scan);
@@ -406,4 +419,3 @@ void print_in_middle(WINDOW *win, int starty, int startx, int width, char *strin
 }
 
 
-#endif //GHA2018_HOMEMENU_H

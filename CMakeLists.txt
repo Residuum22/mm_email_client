@@ -10,7 +10,10 @@ include_directories(${CURL_INCLUDE_DIRS})
 
 set(SOURCE_FILES
         main.c
-        homemenu.h smtp.h)
+        menus.c
+        smtp.h
+        menus.h
+        smtp.c)
 
 add_executable(GHA2018 ${SOURCE_FILES})
 
