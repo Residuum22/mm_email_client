@@ -1,8 +1,3 @@
-//
-// Created by mihalikmark on 2018.11.22..
-//
-
-
 /***************************************************************************
  *                                  _   _ ____  _
  *  Project                     ___| | | |  _ \| |
@@ -23,34 +18,23 @@
  * This software is distributed on an "AS IS" basis, WITHOUT WARRANTY OF ANY
  * KIND, either express or implied.
  *
- ***************************************************************************/
-
-/* <DESC>
- * SMTP example using TLS
- * </DESC>
- */
+ *****************************************************************************/
+ /*---------------------------------------------------------------------------
+  I use curl example with a lots of modifications
+ ----------------------------------------------------------------------------*/
 #include "smtp.h"
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <curl/curl.h>
 #include <time.h>
 
-/* This is a simple example showing how to send mail using libcurl's SMTP
- * capabilities. It builds on the smtp-mail.c example to add authentication
- * and, more importantly, transport security to protect the authentication
- * details from being snooped.
- *
- * Note that this example requires libcurl 7.20.0 or above.
- */
+char *mytext[7]; //Global variable for the email header
 
-
-char *mytext[7];
-
-struct upload_status {
+struct upload_status { //How many lines read
     int lines_read;
 };
 
+// Reading function from the example code modified
 static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
 {
     struct upload_status *upload_ctx = (struct upload_status *)userp;
@@ -74,43 +58,44 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
     return 0;
 }
 
-int curlsmtp(void)
+int curlSmtpEmailSending(void)
 {
-    time_t now;
-    time(&now);
-    char date_buff[33];
-    strftime(date_buff, (33), "%a , %d %b %Y %H:%M:%S", localtime(&now));
-    CURL *curl;
-    CURLcode res = CURLE_OK;
-    struct curl_slist *recipients = NULL;
-    struct upload_status upload_ctx;
+    time_t now; //Make a time variable
+    time(&now); //Get the current time
+    char date_buff[33]; //Make a buffer for the date and time
+    strftime(date_buff, (33), "%a , %d %b %Y %H:%M:%S", localtime(&now)); //Convert time to string
+    CURL *curl; //Make a curl
+    CURLcode res = CURLE_OK; //Make curl OK
+    struct curl_slist *recipients = NULL; //Make the list NULL
+    struct upload_status upload_ctx; //Make an upload status struct
 
-    mytext[0] = (char*)malloc(sizeof(date_buff) + 2);
-    strcpy(mytext[0], date_buff);
-    strcat(mytext[0], "\r\n");
+    mytext[0] = (char*)malloc(sizeof(date_buff) + 2); //First element is the time, get a space for it and for \r\n
+    strcpy(mytext[0], date_buff); //Copy the date
+    strcat(mytext[0], "\r\n"); //Put the ending sign to the end
     mytext[1] = (char*)malloc(sizeof(addressTo) + 2 + strlen("To: "));
-    strcpy(mytext[1], "To: ");
-    strcat(mytext[1], addressTo);
-    strcat(mytext[1], "\r\n");
+    strcpy(mytext[1], "To: "); //Put before the email address to
+    strcat(mytext[1], addressTo); //Put the email address
+    strcat(mytext[1], "\r\n"); //Put the ending sign to the end
     mytext[2] = (char*)malloc(sizeof(UID) + 2 + strlen("From: "));
-    strcpy(mytext[2], "From: ");
-    strcat(mytext[2], UID);
-    strcat(mytext[2], "\r\n");
+    strcpy(mytext[2], "From: "); //Put before the email address
+    strcat(mytext[2], UID); //Put my email address
+    strcat(mytext[2], "\r\n"); //Put the ending sign to the end
     mytext[3] = (char*)malloc(sizeof(subjectMail) + 2 + strlen("Subject: "));
-    strcpy(mytext[3], "Subject: ");
-    strcat(mytext[3], subjectMail);
-    strcat(mytext[3], "\r\n");
+    strcpy(mytext[3], "Subject: "); //Put the subject part
+    strcat(mytext[3], subjectMail); //Put the subject part
+    strcat(mytext[3], "\r\n"); //Put the ending sign to the end
     mytext[4] = (char*)malloc(2);
-    strcpy(mytext[4], "\r\n");
+    strcpy(mytext[4], "\r\n"); //Put the ending sign to the end
     mytext[5] = (char*)malloc(sizeof(text) + 2);
     strcpy(mytext[5], text);
-    strcat(mytext[5], "\r\n");
-    mytext[6] = (char*)malloc(1);
-    mytext[6] = NULL;
+    strcat(mytext[5], "\r\n"); //Put the ending sign to the end
+    mytext[6] = (char*)malloc(1); //Get a space for ending NULL pointer
+    mytext[6] = NULL; //Put the ending NULL pointer the end of the header
 
 
     upload_ctx.lines_read = 0;
 
+    //Curl example (modified)
     curl = curl_easy_init();
     if(curl) {
         /* Set username and password */
@@ -177,7 +162,7 @@ int curlsmtp(void)
 
         /* Check for errors */
         if(res != CURLE_OK)
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+            fprintf(stderr, "curl_easy_perform() failed: %s\n", //Todo export error in a file
                     curl_easy_strerror(res));
 
         /* Free the list of recipients */
@@ -187,31 +172,33 @@ int curlsmtp(void)
         curl_easy_cleanup(curl);
     }
     int i;
-    for(i = 0; i < 7; ++i) free(mytext[i]);
+    for(i = 0; i < 7; ++i) free(mytext[i]); //Free my header
 
     return (int)res;
 }
 
-int connectToServer(){ //TODO ez is jó csak meg kell csinálni, hogy loginolni tudjon...
-    CURL *curl;
-    CURLcode res = CURLE_OK;
+void connectToServer(int *statusFlag, int *exitFlag){
+    char bufferForError[50]; //When error occured with curl I catch it here
+    CURL *curl; //Make a curl
+    CURLcode res = CURLE_OK; //Make curl state OK
+    curl = curl_easy_init(); //Init curl
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_USERNAME, UID); //LogID
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, PWD); //Log PWD
 
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_USERNAME, UID);
-        curl_easy_setopt(curl, CURLOPT_PASSWORD, PWD);
-
-
+        //Set domain to google on 465 port, only ssl
         curl_easy_setopt(curl, CURLOPT_URL, "smtps://smtp.gmail.com:465");
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L); //I dont want to see on stderr anything
         res = curl_easy_perform(curl);
-
-        if(res != CURLE_OK)
-            fprintf(stderr, "curl_easy_perform() failed: %s\n",
-                    curl_easy_strerror(res));
+        strcpy(bufferForError, curl_easy_strerror(res)); //Copy the backdata in the Buffer
 
 
-        curl_easy_cleanup(curl);
-        return res;
+        curl_easy_cleanup(curl); //Clean the curl, and delete
+        //Error checking
+        if (!strcmp(bufferForError, "No error")) {
+            *statusFlag = 1; //Status will be: Logged
+            *exitFlag = 0; //Exit this logining menu
+        }
     }
 }
 

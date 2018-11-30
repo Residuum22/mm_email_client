@@ -1,15 +1,13 @@
 #include "menus.h"
 
-int statusFlag = 0;
-char text[1000];
-char addressTo[100];
-char subjectMail[50];
+char text[1000]; //Text array Global variable
+char addressTo[100]; //AddressTo global variable for sending
+char subjectMail[50]; //A global variable for the mail subject
 
-char *choicesMenu[];
-char *choicesLog[];
 int ycoord, xcoord;
+int statusFlag = 0;
 
-char *choicesMenu[] = {
+char *choicesMenu[] = { //Home menu choices list
         "Logining in Mail Account",
         "Sending an E-mail",
         "Accounts",
@@ -17,7 +15,7 @@ char *choicesMenu[] = {
         (char *) NULL,
 };
 
-char *choicesLog[] = {
+char *choicesLog[] = { //Choices for logging menu
         "E-mail",
         "Password",
         "Exit",
@@ -25,20 +23,15 @@ char *choicesLog[] = {
 };
 
 
-void menuing() {
-    UID[0] = '\0';
-    PWD[0] = '\0';
+void homeMenu() {
+    /*Create the variables for homeMenu*/
     ITEM **menuItems;
     ITEM **loginItems;
-    ITEM **loggedAccount;
-    int c;
     MENU *menu;
     MENU *login;
     WINDOW *menuWindow;
     WINDOW *loginWindow;
-    WINDOW *createMailWindow;
-    int countChoicesMenu, countChoicesLogin, i;
-
+    int countChoicesMenu, countChoicesLogin, i, character;
 
     /* Initialize curses */
     initscr(); //Initialize screen
@@ -48,25 +41,28 @@ void menuing() {
     keypad(stdscr, TRUE); //screen can be edited with keypad
 
     getmaxyx(stdscr, ycoord, xcoord); //Get the size of the terminal
+    //TODO the terminal size must be changed when it it too small
 
     init_pair(1, COLOR_YELLOW, COLOR_BLACK); //Color setting
 
     /*Create items */
+    //Give the sizes
     countChoicesMenu = sizeof(choicesMenu) / sizeof(choicesMenu[0]);
     countChoicesLogin = sizeof(choicesLog) / sizeof(choicesLog[0]);
 
+    //Dynamic memory allocation
     menuItems = (ITEM **) calloc((unsigned) (countChoicesMenu + 1), sizeof(ITEM *));
     loginItems = (ITEM **) calloc((unsigned) (countChoicesLogin + 1), sizeof(ITEM *));
-    loggedAccount = (ITEM **) calloc((unsigned) 4, sizeof(ITEM *));
 
+    //Dynamic memory allocation for chices
     for (i = 0; i < countChoicesMenu; ++i)
         menuItems[i] = new_item(choicesMenu[i], choicesMenu[i]);
     for (i = 0; i < countChoicesLogin; ++i)
         loginItems[i] = new_item(choicesLog[i], choicesLog[i]);
 
+    //Give its end a NULL pointer
     menuItems[countChoicesMenu] = (ITEM *) NULL;
     loginItems[countChoicesLogin] = (ITEM *) NULL;
-    loggedAccount[3] = (ITEM *) NULL;
 
     /* Create menu */
     menu = new_menu(menuItems);
@@ -74,21 +70,18 @@ void menuing() {
 
     /* Create the window to be associated with the menu */
 
-    //ezzel a keretet állítom vagyis az ablakot
+    //Set the menu size
     menuWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
     loginWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
-    createMailWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
 
+    //Enabling keypad
     keypad(menuWindow, TRUE);
     keypad(loginWindow, TRUE);
-    keypad(createMailWindow, TRUE);
-    refresh();
-    wrefresh(menuWindow);
+
 
     /* Set main window and sub window */
+    /* 2nd coord is the long, 3th is the long from the window and the marker*/
     set_menu_win(menu, menuWindow);
-    //2koord a osszúság, 3. a windowstol a hossz
-    //+2 az strlenhez mert ott a marker...
     set_menu_sub(menu, derwin(menuWindow, 10, (int) strlen(choicesMenu[0]) + 2, 5,
                               (xcoord - (int) strlen(choicesMenu[0])) / 2));
     set_menu_win(login, loginWindow);
@@ -112,92 +105,93 @@ void menuing() {
     post_menu(menu);
     wrefresh(menuWindow);
 
-    char buffer[100];
-    int exitFlag = 100000;
-    mvprintw(LINES - 4, 4, "Status: Please Log In!");
-    refresh();
-    wrefresh(menuWindow);
-    pos_menu_cursor(menu);
-    while ((exitFlag) && (c = wgetch(menuWindow)) != KEY_F(1)) {
-        switch (c) {
+    char buffer[100]; //Buffer for the choices
+    int exitFlag = 1; //Exit flag
+    mvprintw(LINES - 4, 4, "Status: Please Log In!"); //Print to screen the logging status
+    refresh(); //Refresh the screen
+    wrefresh(menuWindow); //Refresh the window
+    pos_menu_cursor(menu); //Move the cursor the the menu first item
+    while ((exitFlag) && (character = wgetch(menuWindow)) != KEY_F(1)) { //Until F1 or exit choice it will run
+        switch (character) {
             case KEY_DOWN:
-                menu_driver(menu, REQ_DOWN_ITEM);
+                menu_driver(menu, REQ_DOWN_ITEM); //Move down
                 break;
             case KEY_UP:
-                menu_driver(menu, REQ_UP_ITEM);
+                menu_driver(menu, REQ_UP_ITEM); //Move up
                 break;
             case 10: /* Enter */
-                strcpy(buffer, item_name(current_item(menu)));
-                if (strcmp(choicesMenu[0], buffer) == 0) {
-                    unpost_menu(menu);
-                    wrefresh(menuWindow);
-                    loginMenuWindow(login, loginWindow, COLOR_PAIR(1));
-                    post_menu(menu);
-                    wrefresh(menuWindow);
-                    refresh();
-                } else if (strcmp(choicesMenu[1], buffer) == 0 && statusFlag) {
-                    unpost_menu(menu);
-                    refresh();
-                    sendingEmail();
-                    curlsmtp();
-                    post_menu(menu);
-                    box(menuWindow, 0, 0);
-                    refresh();
-                    wrefresh(menuWindow);
-                } else if (strcmp(choicesMenu[3], buffer) == 0) {
-                    unpost_menu(menu);
-                    char scan;
-                    int starty, startx;
-                    starty = ycoord / 2 - 4;
-                    startx = xcoord / 2 - 5;
-                    unpost_menu(login);
-                    wrefresh(loginWindow);
-                    clear();
+                strcpy(buffer, item_name(current_item(menu))); //Copy to buffer the current list item
+                if (strcmp(choicesMenu[0], buffer) == 0) { //If the login
+                    unpost_menu(menu); //Unpost menu
+                    wrefresh(menuWindow); //Refresh
+                    loginMenuWindow(login, loginWindow, COLOR_PAIR(1)); //Call loginMenuWindow, that call other menu
+                    clear(); //Clear the last state
+                    print_in_middle(menuWindow, 1, (int) (xcoord - strlen(stringMenu)) / 2, (int) strlen(stringMenu),
+                                    stringMenu, COLOR_PAIR(1)); //Print out the welcome message// ge
+                    box(menuWindow, 0, 0); //Print a box
+                    post_menu(menu); //Post the menu
+                    wrefresh(menuWindow); //Refresh the window
+                    refresh(); //Refresh
+
+                } else if (strcmp(choicesMenu[1], buffer) == 0 && statusFlag) { //E-mail send, if logged
+                    unpost_menu(menu); //Unpost menu
+                    refresh(); //Refresh
+                    sendingEmail(); //Call sending email function
+                    curlSmtpEmailSending(); //Call curl to send //TODO error export
+                    post_menu(menu); //Post menu again
+                    box(menuWindow, 0, 0); //Create a box
+                    refresh(); //Refresh
+                    wrefresh(menuWindow); //Refresh the window
+                } else if (strcmp(choicesMenu[3], buffer) == 0) { //When the customer choice exit
+                    unpost_menu(menu); //Unpost menu
+                    wrefresh(loginWindow); //Refresh the screen
+                    int scan; //Init a character for scan
+                    clear(); //Clear the screen
                     mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("Do you want to exit?(y/n)")) / 2, "%s",
-                             "Do you want to exit?(y/n)");
-                    move(starty, startx);
-                    while ((scan = (char) getch()) != KEY_F(1)) {
-                        if (scan == 'y' || scan == '\n') {
-                            exitFlag = 0;
+                             "Do you want to exit?(y/n)"); //Move this to screen
+                    while ((scan = getch()) != KEY_F(1)) { //While loop until key y or n
+                        if (scan == 'y') { //If y,
+                            exitFlag = 0; // exitFlag = 0 to exit
                             break;
-                        } else if (scan == 'n') {
-                            exitFlag = 1;
+                        } else if (scan == 'n') { //If n,
+                            exitFlag = 1; //exit flag = 1 to no exit
                             break;
                         }
                     }
-                    clear();
-                    box(menuWindow, 0, 0);
-                    post_menu(menu);
-                    mvprintw(LINES - 4, 4, "Status: Please Log In!");
-                    refresh();
-                    wrefresh(menuWindow);
+                    clear(); //Clear screen
+                    box(menuWindow, 0, 0); //Make a box
+                    post_menu(menu); //Post the menu
+                    mvprintw(LINES - 4, 4, "Status: Please Log In!"); //
+                    refresh(); //Refresh the screen
+                    wrefresh(menuWindow); //Refresh the menu window
 
                 }
-                if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID);
-                if (statusFlag) {
-                    mvprintw(LINES - 4, 4, "Status: Logged");
-                    refresh();
+                if (statusFlag) { //If the statusflag is 1, so logged, write this out
+                    mvprintw(LINES - 5, 4, "E-mail: %s", UID); //Write current e-mail address
+                    mvprintw(LINES - 4, 4, "Status: Logged"); //Write this message out
+                    refresh(); //Refresh the screen
                 }
-                pos_menu_cursor(menu);
-                refresh();
+                pos_menu_cursor(menu); //Move the cursor to menu
+                refresh(); //Refresh the screen
                 break;
             default:
                 break;
         }
-        wrefresh(menuWindow);
+        if (!statusFlag) mvprintw(LINES - 4, 4, "Status: Please Log In!"); //If the status isnt logged, write this out
+        refresh(); //Refresh the screen
+        wrefresh(menuWindow); //Refresh the window
     }
 
     /* Unpost and free all the memory taken up */
-    unpost_menu(menu);
-    unpost_menu(login);
-    free_menu(menu);
-    free_menu(login);
-    for (i = 0; i < countChoicesMenu; ++i) {
+    unpost_menu(menu); //Unpost the menu
+    unpost_menu(login); //Unpost the login
+    free_menu(menu); //Free menu
+    free_menu(login); //Free login
+    for (i = 0; i < countChoicesMenu; ++i) { //Free all choices
         free_item(menuItems[i]);
         free_item(loginItems[i]);
     }
-    endwin();
-    return;
+    endwin(); //Close the window
 }
 
 
@@ -218,7 +212,6 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
     wrefresh(loginWindow);
 
     char buffer[100]; //The working buffer for the current item
-    char bufferForError[50]; //When error occured with curl I catch it here
     int exitFlag = 1; //A flag for exit
 
     while ((exitFlag) && (scanForScreen = wgetch(loginWindow)) != KEY_F(1)) {
@@ -270,7 +263,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
                     wrefresh(loginWindow); //Refresh the window
                 } else if (strcmp(choicesLog[1], buffer) == 0) { //When the customer choose password menu item
                     char secretPWD[50]; //This is a buffer for password's '*', because I dont want to write it out
-                    for (i = 0; i < 100; ++i) PWD[i] = '\0'; //Write 0-s to the array
+                    for (i = 0; i < 60; ++i) PWD[i] = '\0'; //Write 0-s to the array
                     int counter = 0; //Basic counter for password
 
                     unpost_menu(login); //Unpost the menu
@@ -297,31 +290,10 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
                         move(ycoord / 2 - 4,
                              ((int) (xcoord - strlen(PWD)) / 2) + counter); //Move the cursor after the string
                     }
-                    //Test the logining datas
-                    CURL *curl; //Make a curl
-                    CURLcode res = CURLE_OK; //Make curl state OK
-                    curl = curl_easy_init(); //Init curl
-                    if (curl) {
-                        curl_easy_setopt(curl, CURLOPT_USERNAME, UID); //LogID
-                        curl_easy_setopt(curl, CURLOPT_PASSWORD, PWD); //Log PWD
+                    connectToServer(&statusFlag, &exitFlag); //Test the logining datas
+                    clear();
+                    if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged"); //If the status is logged print to scr
 
-                        //Set domain to google on 465 port, only ssl
-                        curl_easy_setopt(curl, CURLOPT_URL, "smtps://smtp.gmail.com:465");
-                        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L); //I dont want to see on stderr anything
-                        res = curl_easy_perform(curl);
-                        clear();
-
-                        strcpy(bufferForError, curl_easy_strerror(res)); //Copy the backdata in the Buffer
-
-
-                        curl_easy_cleanup(curl); //Clean the curl, and delete
-                        //Error checking
-                        if (!strcmp(bufferForError, "No error")) {
-                            statusFlag = 1; //Status will be: Logged
-                            exitFlag = 0; //Exit this logining menu
-                        }
-                        if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged"); //If the status is logged print to scr
-                    }
                     print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2,
                                     (int) strlen(stringLogin),
                                     stringLogin, color); //Than post the homemenu
