@@ -210,7 +210,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
     char scanForCharacter; //A char var. for ascii character
     char stringLogin[] = {"Authorization"}; //This is the stringlogin
     print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2, (int) strlen(stringLogin), stringLogin,
-                    color); //Print out the stringlogin
+                    color); //Print out the stringLogin
 
     refresh();
 
@@ -351,76 +351,80 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
 }
 
 void sendingEmail() {
-    int counter = 0;
-    clear();
-    mvprintw(LINES - ycoord + 3, 4, "%s", "TO: ");
-    refresh();
-    char scan;
-    int ycursor = 3, startx, starty, xcoursor = 4 + (int) strlen("TO: ");
-    startx = xcoursor;
-    addressTo[counter++] = '<';
-    while ((scan = (unsigned char) getch()) != '\n') {
-        if (scan == 7) {
-            if (xcoursor != startx) {
-                mvdelch(ycursor, --xcoursor);
-                addressTo[--counter] = '\0';
+    int counter = 0; //Basic counter for the caracters
+    clear(); //Clear the screen
+    mvprintw(LINES - ycoord + 3, 4, "%s", "TO: "); //Print to screen this
+    refresh(); //Refresh
+    char scanForCharacter; //A char for the variablen
+    int ycursor = 3, xcoursor = 4 + (int) strlen("TO: "); //The setting for the To part
+    addressTo[counter++] = '<'; //For sending need to be this the first caracter
+    while ((scanForCharacter = (char) getch()) != '\n') {
+        if (scanForCharacter == 7) { //When the customer press backspace
+            if (counter > 1) { //Until the last number
+                mvdelch(ycursor, --xcoursor); //Del this character at this position
+                addressTo[--counter] = '\0'; //Put terminating 0 to addresTo, where I deleted
             }
-        } else if (counter < 50 - 1) {
-            mvaddch(ycursor, xcoursor++, scan);
-            addressTo[counter++] = scan;
+        } else if (counter < 50 - 2 && counter <= xcoord - 4) {
+            mvaddch(ycursor, xcoursor++, scanForCharacter); //Add the scanned character to screen
+            addressTo[counter++] = scanForCharacter; //Add the scanned caracter to addressTo array
         }
     }
-    addressTo[counter] = '>';
+    addressTo[counter++] = '>'; //Add this character to end of string
+    addressTo[counter] = '\0'; //Add safe terminating 0
 
-    mvprintw(LINES - ycoord + 4, 4, "%s", "Subject: ");
-    refresh();
-    ycursor = 4, xcoursor = 4 + (int) strlen("Subject: ");
-    startx = xcoursor;
-    counter = 0;
-    while ((scan = (char) getch()) != '\n') {
-        if (scan == 7) {
-            if (xcoursor != startx) {
-                mvdelch(ycursor, --xcoursor);
-                subjectMail[--counter] = '\0';
+    mvprintw(LINES - ycoord + 4, 4, "%s", "Subject: "); //Print the next part, the subject
+    refresh(); //Refresh the screen
+    ycursor = 4, xcoursor = 4 + (int) strlen("Subject: "); //Give to program the new coursor states
+    counter = 0; //Set counter null
+    while ((scanForCharacter = (char) getch()) != '\n') { //In this cycle get caracters
+        if (scanForCharacter == 7) { //If the customer want to delete
+            if (counter > 0) { //And the counter bigger as null
+                mvdelch(ycursor, --xcoursor); //Delete caracter
+                subjectMail[--counter] = '\0'; //Set the value to 0
             }
-        } else if (counter < 50 - 1) {
-            mvaddch(ycursor, xcoursor++, scan);
-            subjectMail[counter++] = scan;
+        } else if (counter < 50 - 1 && xcoursor <= xcoord -
+                                                   4) { //If the counter smaller as the array, and the coursor state smaller as the window edge
+            mvaddch(ycursor, xcoursor++, scanForCharacter); //Delete the caracter
+            subjectMail[counter++] = scanForCharacter; //Put in the array the character
         }
     }
-    mvprintw(LINES - ycoord + 6, 4, "%s", "Text:");
-    refresh();
-    ycursor = 7, xcoursor = 4;
-    move(8, 4);
-    startx = xcoursor;
-    starty = ycursor;
-    ycursor++;
-    counter = 0;
-    while ((scan = (char) getch()) != '\n') {
-        if (scan == 7) {
-            if (xcoursor > startx) {
-                mvdelch(ycursor, --xcoursor);
-                text[--counter] = '\0';
-            } else if (xcoursor == startx && ycursor > starty + 1) {
-                ycursor--;
-                xcoursor = xcoord - 4;
-                mvdelch(ycursor, xcoursor);
-                text[--counter] = '\0';
-            }
-        } else {
-            mvaddch(ycursor, xcoursor++, scan);
-            text[counter++] = scan;
-            if (xcoursor == xcoord - 4) {
-                xcoursor = 4;
-                ycursor++;
-                text[counter++] = scan;
+    subjectMail[counter] = '\0'; //Add terminating null
 
+    mvprintw(LINES - ycoord + 6, 4, "%s", "Text:"); //Print the next part, to the screen
+
+    ycursor = 8, xcoursor = 4; //Set the coursor
+    move(ycursor, xcoursor); //Set the coursor position
+    refresh(); //Refresh the window
+
+    int startx = xcoursor; //The starting coordinate for x
+    int starty = ycursor; //The starting coordinate for y
+
+    counter = 0; //Set the counter to null
+
+    while ((scanForCharacter = (char) getch()) != '\n') { //Waiting for a character
+        if (scanForCharacter == 7) { //When the character is backspace delete a character
+            if (counter > 0) { //Until counter bigger as 0
+                if (xcoursor > startx) {
+                    mvdelch(ycursor, --xcoursor); //Delete character
+                } else if (ycursor > starty) { //Delete last row last character
+                    xcoursor = xcoord - 4; //Set y-xoursor 4 character before the edge of the screen
+                    mvdelch(--ycursor, --xcoursor); //Delete character
+                }
+                text[--counter] = '\0'; //Set 0 the array element
+            }
+        } else if (counter < 1000 - 1 &&
+                   ycursor <= LINES - 3) { //This is the safe mode for upper index, and out of line
+            mvaddch(ycursor, xcoursor++, scanForCharacter); //Add character
+            text[counter++] = scanForCharacter; //Add to text the character
+            if (xcoursor == xcoord - 4) { //When the cursor go to edge - 4
+                xcoursor = startx; //Set add coursor to starting x pos.
+                move(++ycursor, xcoursor); //Move the coursor to the right position
+                refresh(); //Refresh the screen
             }
         }
     }
-    text[counter] = '\0';
-
-
+    text[counter] = '\0'; //Make a 0 to end of array 
+    //Return
 }
 
 //This comes from ncourses example code, so I dont want to write comment.
