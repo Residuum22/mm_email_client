@@ -3,8 +3,11 @@
 #include "menus.h"
 #include <time.h>
 
-char UID[40];
-char PWD[40];
+#define UID_MAX 256
+#define PWD_MAX 100
+
+char UID[256];
+char PWD[100];
 
 int main(){
     menuing();

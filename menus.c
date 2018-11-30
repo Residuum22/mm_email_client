@@ -2,7 +2,7 @@
 
 int statusFlag = 0;
 char text[1000];
-char addressTo[50];
+char addressTo[256];
 char subjectMail[50];
 
 char *choicesMenu[];
@@ -69,8 +69,8 @@ void menuing() {
     loggedAccount[3] = (ITEM *) NULL;
 
     /* Create menu */
-    menu = new_menu((ITEM **) menuItems);
-    login = new_menu((ITEM **) loginItems);
+    menu = new_menu(menuItems);
+    login = new_menu(loginItems);
 
     /* Create the window to be associated with the menu */
 
@@ -131,11 +131,11 @@ void menuing() {
                 if (strcmp(choicesMenu[0], buffer) == 0) {
                     unpost_menu(menu);
                     wrefresh(menuWindow);
-                    logining(loginItems, login, loginWindow, countChoicesLogin, COLOR_PAIR(1), loggedAccount);
+                    loginMenuWindow(login, loginWindow, COLOR_PAIR(1));
                     post_menu(menu);
                     wrefresh(menuWindow);
                     refresh();
-                } else if (strcmp(choicesMenu[1], buffer) == 0) {
+                } else if (strcmp(choicesMenu[1], buffer) == 0 && statusFlag) {
                     unpost_menu(menu);
                     refresh();
                     sendingEmail();
@@ -182,7 +182,8 @@ void menuing() {
                 pos_menu_cursor(menu);
                 refresh();
                 break;
-
+            default:
+                break;
         }
         wrefresh(menuWindow);
     }
@@ -200,35 +201,29 @@ void menuing() {
     return;
 }
 
-//ASDLéAJKDSASDJKSDJAHJHJHKKASDJHJHKASDJKHASDJHKASDJASDJHKASDJKJASDJASDJHSDKJHSDAKJHASDJKASDJHSDJHKJHKASDJHKKASDJHASDJHK
-/*
- *
- * kész VAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANNNNNNNNNNNNNNNNNNN
- *
- *
- * */
-void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoicesLogin, chtype color,
-              ITEM **loggedAccount) {
-    clear();
 
-    int c;
-    int i;
-    char character;
-    char stringLogin[] = {"Authorization"};
-    print_in_middle(loginWindow, 1, (xcoord - strlen(stringLogin)) / 2, strlen(stringLogin), stringLogin, color);
+void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
+    clear(); //Clear screen
 
+    int scanForScreen; //Scan a caracter from screen, why int? Cause arrow a non ascii caracter
+    int i; //Basic counter
+    char scanForCharacter; //A char var. for ascii character
+    char stringLogin[] = {"Authorization"}; //This is the stringlogin
+    print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2, (int) strlen(stringLogin), stringLogin,
+                    color); //Print out the stringlogin
 
     refresh();
+
     /* Post the menu */
     post_menu(login);
     wrefresh(loginWindow);
 
-    char buffer[100];
-    char bufferForError[50];
-    char str[100];
-    int exitFlag = 10000;
-    while ((exitFlag) && (c = wgetch(loginWindow)) != KEY_F(1)) {
-        switch (c) {
+    char buffer[100]; //The working buffer for the current item
+    char bufferForError[50]; //When error occured with curl I catch it here
+    int exitFlag = 1; //A flag for exit
+
+    while ((exitFlag) && (scanForScreen = wgetch(loginWindow)) != KEY_F(1)) {
+        switch (scanForScreen) {
             case KEY_DOWN:
                 menu_driver(login, REQ_DOWN_ITEM);
                 break;
@@ -236,102 +231,123 @@ void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoi
                 menu_driver(login, REQ_UP_ITEM);
                 break;
             case 10: /* Enter */
+                //Copy the current item name in a buffer for use
                 strcpy(buffer, item_name(current_item(login)));
+
+                //Wenn the customer choose the first item, what is E-mail
                 if (strcmp(choicesLog[0], buffer) == 0) {
-                    char scan;
-                    int xcoursor, ycursor, starty, startx, counter = 0;
-                    ycursor = starty = ycoord / 2 - 4;
-                    xcoursor = startx = xcoord / 2 - 5;
-                    unpost_menu(login);
-                    wrefresh(loginWindow);
-                    clear();
-                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s", "E-mail:");
-                    move(starty, startx);
-                    while ((scan = (char) getch()) != '\n') {
-                        if (scan == 7) {
-                            if (xcoursor != startx) {
-                                mvdelch(ycursor, --xcoursor);
-                                UID[--counter] = '\0';
-                            }
-                        } else {
-                            mvaddch(ycursor, xcoursor++, scan);
-                            UID[counter++] = scan;
-                        }
-                    }
-                    clear();
-                    print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2, (int) strlen(stringLogin),
-                                    stringLogin, color);
-                    box(loginWindow, 0, 0);
-                    post_menu(login);
-                    wrefresh(loginWindow);
-                } else if (strcmp(choicesLog[1], buffer) == 0) {
-                    char scan;
-                    int xcoursor, ycursor, starty, startx, counter = 0;
-                    ycursor = starty = ycoord / 2 - 4;
-                    xcoursor = startx = xcoord / 2 - 5;
-                    unpost_menu(login);
-                    wrefresh(loginWindow);
-                    clear();
-                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("Password:")) / 2, "%s", "Password:");
-                    move(starty, startx);
-                    while ((scan = (char) getch()) != '\n') {
-                        if (scan == 7) {
-                            if (xcoursor != startx) {
-                                mvdelch(ycursor, --xcoursor);
-                                PWD[--counter] = '\0';
-                            }
-                        } else {
-                            mvaddch(ycursor, xcoursor++, '*');
-                            PWD[counter++] = scan;
-                        }
-                    }
-                    CURL *curl;
-                    CURLcode res = CURLE_OK;
+                    for (i = 0; i < 256; ++i) UID[i] = '\0'; //Clear the last e-mail address
+                    int counter = 0; //This is a counter for the caracters in the screen
 
-                    curl = curl_easy_init();
-                    if (curl) {
-                        curl_easy_setopt(curl, CURLOPT_USERNAME, UID);
-                        curl_easy_setopt(curl, CURLOPT_PASSWORD, PWD);
+                    unpost_menu(login); //Unpost the login window menu
+                    wrefresh(loginWindow); //Refresh the screen
+                    clear(); //Clear the screen
 
-
-                        curl_easy_setopt(curl, CURLOPT_URL, "smtps://smtp.gmail.com:465");
-                        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L);
-                        res = curl_easy_perform(curl);
-                        clear();
-
-                        strcpy(bufferForError, curl_easy_strerror(res));
-
-
-                        curl_easy_cleanup(curl);
-
-                        if (!strcmp(bufferForError, "No error")) {
-                            statusFlag = 1;
-                            exitFlag = 0;
-                        }
-                        if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged");
+                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s",
+                             "E-mail:"); //Print to the screen this word:
+                    move(ycoord / 2 - 4, xcoord / 2); //Move the cursor between the screen
+                    while ((scanForCharacter = (char) getch()) != '\n') { //Waiting for a character
+                        if (scanForCharacter == 7) { //If it is the back button
+                            if (counter > 0) //Counter cant be minus number
+                                UID[--counter] = '\0'; //If I clear fill with nulls
+                        } else if (counter < 256) //The password can be max 256 character long (gmail)
+                            UID[counter++] = scanForCharacter;
+                        clear(); //Clear the screen
+                        refresh(); //Refresh it
+                        mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s",
+                                 "E-mail:"); //Write to screen this string
+                        //todo here I must put new line when the string longer than the screen wide
+                        mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(UID)) / 2, "%s",
+                                 UID); //Write to screen the current ID
+                        refresh(); //Refresh the screen
+                        move(ycoord / 2 - 4,
+                             ((int) (xcoord - strlen(UID)) / 2) + counter); //Move the cursor after the last character
                     }
                     print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2,
                                     (int) strlen(stringLogin),
-                                    stringLogin, color);
-                    box(loginWindow, 0, 0);
-                    post_menu(login);
-                    wrefresh(loginWindow);
-                    //connectToServer();
-                } else if (strcmp(choicesLog[2], buffer) == 0) {
+                                    stringLogin, color); //Print the login string in to the middle
+                    box(loginWindow, 0, 0); //Draw a box
+                    post_menu(login); //Post the login menu
+                    wrefresh(loginWindow); //Refresh the window
+                } else if (strcmp(choicesLog[1], buffer) == 0) { //When the customer choose password menu item
+                    char secretPWD[50]; //This is a buffer for password's '*', because I dont want to write it out
+                    for (i = 0; i < 100; ++i) PWD[i] = '\0'; //Write 0-s to the array
+                    int counter = 0; //Basic counter for password
+
+                    unpost_menu(login); //Unpost the menu
+                    wrefresh(loginWindow); //Refresh the screen
+                    clear(); //Clear the screen
+
+                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("Password:")) / 2, "%s",
+                             "Password:"); //Print to the screen this string
+                    move(ycoord / 2 - 4, xcoord / 2); //Move the cursor into a new line and middle
+                    while ((scanForCharacter = (char) getch()) != '\n') { //Waiting for a character
+                        if (scanForCharacter == 7) { //If the character a backspace
+                            if (counter > 0) //Cause I cant to go back, as 0
+                                PWD[--counter] = '\0'; //Fill PWD with 0 when I delete
+                        } else if (counter < 60) //Password can be max 60 character long (gmail)
+                            PWD[counter++] = scanForCharacter;
+                        clear(); //Clear the screen
+                        refresh(); //Refresh it
+                        mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("Password:")) / 2, "%s",
+                                 "Password:"); //Print this to middle
+                        for (i = 0; i < strlen(PWD); ++i) secretPWD[i] = '*'; //Put secretPWD *-s, as long as the PWD
+                        secretPWD[i] = '\0'; //Terminating 0
+                        mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(secretPWD)) / 2, "%s", secretPWD); //Write out *
+                        refresh(); //Refresh the screen
+                        move(ycoord / 2 - 4,
+                             ((int) (xcoord - strlen(PWD)) / 2) + counter); //Move the cursor after the string
+                    }
+                    //Test the logining datas
+                    CURL *curl; //Make a curl
+                    CURLcode res = CURLE_OK; //Make curl state OK
+                    curl = curl_easy_init(); //Init curl
+                    if (curl) {
+                        curl_easy_setopt(curl, CURLOPT_USERNAME, UID); //LogID
+                        curl_easy_setopt(curl, CURLOPT_PASSWORD, PWD); //Log PWD
+
+                        //Set domain to google on 465 port, only ssl
+                        curl_easy_setopt(curl, CURLOPT_URL, "smtps://smtp.gmail.com:465");
+                        curl_easy_setopt(curl, CURLOPT_VERBOSE, 0L); //I dont want to see on stderr anything
+                        res = curl_easy_perform(curl);
+                        clear();
+
+                        strcpy(bufferForError, curl_easy_strerror(res)); //Copy the backdata in the Buffer
+
+
+                        curl_easy_cleanup(curl); //Clean the curl, and delete
+                        //Error checking
+                        if (!strcmp(bufferForError, "No error")) {
+                            statusFlag = 1; //Status will be: Logged
+                            exitFlag = 0; //Exit this logining menu
+                        }
+                        if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged"); //If the status is logged print to scr
+                    }
+                    print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringLogin)) / 2,
+                                    (int) strlen(stringLogin),
+                                    stringLogin, color); //Than post the homemenu
+                    box(loginWindow, 0, 0); //Make a box for it
+                    post_menu(login); //Post it
+                    wrefresh(loginWindow); //Refresh
+                } else if (strcmp(choicesLog[2], buffer) == 0) { //If the customer want to exit
                     exitFlag = 0;
                 }
-                if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID);
-                if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged");
-                else mvprintw(LINES - 4, 4, "Wrong E-mail address orr password!");
-                pos_menu_cursor(login);
-                refresh();
+                if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID); //If the UID is not null, write out
+                if (statusFlag) mvprintw(LINES - 4, 4, "Status: Logged"); //Write out Logged, when is logged
+                else if (PWD[0] == '\0'); //Or write out nothing
+                else
+                    mvprintw(LINES - 4, 4, "Wrong E-mail address or password!"); //When the password or the ID incorrect
+                pos_menu_cursor(login); //Move the cursor to menu list
+                refresh(); //Refresh the screen
+                break; //Break
+            default: //Default part, do nothing, when other caracter comming
                 break;
 
         }
-        wrefresh(loginWindow);
+        wrefresh(loginWindow); //Refresh the screen and menu
     }
 
-    unpost_menu(login);
+    unpost_menu(login); //When I want to do nothing here unpost the login menu and go back
 }
 
 void sendingEmail() {
@@ -343,13 +359,13 @@ void sendingEmail() {
     int ycursor = 3, startx, starty, xcoursor = 4 + (int) strlen("TO: ");
     startx = xcoursor;
     addressTo[counter++] = '<';
-    while ((scan = (char) getch()) != '\n') {
+    while ((scan = (unsigned char) getch()) != '\n') {
         if (scan == 7) {
             if (xcoursor != startx) {
                 mvdelch(ycursor, --xcoursor);
                 addressTo[--counter] = '\0';
             }
-        } else {
+        } else if (counter < 50 - 1) {
             mvaddch(ycursor, xcoursor++, scan);
             addressTo[counter++] = scan;
         }
@@ -367,7 +383,7 @@ void sendingEmail() {
                 mvdelch(ycursor, --xcoursor);
                 subjectMail[--counter] = '\0';
             }
-        } else {
+        } else if (counter < 50 - 1) {
             mvaddch(ycursor, xcoursor++, scan);
             subjectMail[counter++] = scan;
         }
@@ -394,7 +410,6 @@ void sendingEmail() {
         } else {
             mvaddch(ycursor, xcoursor++, scan);
             text[counter++] = scan;
-
             if (xcoursor == xcoord - 4) {
                 xcoursor = 4;
                 ycursor++;
@@ -408,6 +423,8 @@ void sendingEmail() {
 
 }
 
+//This comes from ncourses example code, so I dont want to write comment.
+//Ok I must change a Line..
 void print_in_middle(WINDOW *win, int starty, int startx, int width, char *string, chtype color) {
     int length, x, y;
     float temp;
@@ -415,15 +432,13 @@ void print_in_middle(WINDOW *win, int starty, int startx, int width, char *strin
     if (win == NULL)
         win = stdscr;
     getyx(win, y, x);
-    if (startx != 0)
-        x = startx;
     if (starty != 0)
         y = starty;
     if (width == 0)
         width = 80;
 
     length = (int) strlen(string);
-    temp = (width - length) / 2;
+    temp = (float) (width - length) / 2;
     x = startx + (int) temp;
     wattron(win, color);
     mvwprintw(win, y, x, "%s", string);

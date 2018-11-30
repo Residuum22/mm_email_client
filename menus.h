@@ -13,8 +13,7 @@
 void menuing();
 
 
-void logining(ITEM **loginItems, MENU *login, WINDOW *loginWindow, int countChoicesLogin, chtype color,
-              ITEM **loggedAccount);
+void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color);
 
 void print_in_middle(WINDOW *win, int starty, int startx, int width, char *string, chtype color);
 
