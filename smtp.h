@@ -3,10 +3,10 @@
 #ifndef GHA2018_SMTP_H
 #define GHA2018_SMTP_H
 
-extern char UID[256];
+extern char UID[100];
 extern char PWD[100];
 extern char text[1000];
-extern char addressTo[256];
+extern char addressTo[100];
 extern char subjectMail[50];
 
 struct upload_status;

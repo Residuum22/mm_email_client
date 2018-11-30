@@ -2,7 +2,7 @@
 
 int statusFlag = 0;
 char text[1000];
-char addressTo[256];
+char addressTo[100];
 char subjectMail[50];
 
 char *choicesMenu[];
@@ -175,7 +175,6 @@ void menuing() {
                 }
                 if (UID[0] != 0) mvprintw(LINES - 5, 4, "E-mail: %s", UID);
                 if (statusFlag) {
-                    //grosshausaufgabe2018@gmail.com
                     mvprintw(LINES - 4, 4, "Status: Logged");
                     refresh();
                 }
@@ -236,7 +235,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
 
                 //Wenn the customer choose the first item, what is E-mail
                 if (strcmp(choicesLog[0], buffer) == 0) {
-                    for (i = 0; i < 256; ++i) UID[i] = '\0'; //Clear the last e-mail address
+                    for (i = 0; i < 100; ++i) UID[i] = '\0'; //Clear the last e-mail address
                     int counter = 0; //This is a counter for the caracters in the screen
 
                     unpost_menu(login); //Unpost the login window menu
@@ -250,7 +249,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
                         if (scanForCharacter == 7) { //If it is the back button
                             if (counter > 0) //Counter cant be minus number
                                 UID[--counter] = '\0'; //If I clear fill with nulls
-                        } else if (counter < 256) //The password can be max 256 character long (gmail)
+                        } else if (counter < 100) //The password can be max 256 character long (gmail)
                             UID[counter++] = scanForCharacter;
                         clear(); //Clear the screen
                         refresh(); //Refresh it
@@ -423,7 +422,7 @@ void sendingEmail() {
             }
         }
     }
-    text[counter] = '\0'; //Make a 0 to end of array 
+    text[counter] = '\0'; //Make a 0 to end of array
     //Return
 }
 

@@ -6,7 +6,7 @@
 #define UID_MAX 256
 #define PWD_MAX 100
 
-char UID[256];
+char UID[100];
 char PWD[100];
 
 int main(){
