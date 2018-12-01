@@ -13,7 +13,7 @@ set(SOURCE_FILES
         menus.c
         smtp.h
         menus.h
-        smtp.c)
+        smtp.c accounts.h accounts.c)
 
 add_executable(GHA2018 ${SOURCE_FILES})
 

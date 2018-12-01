@@ -1,4 +1,5 @@
 #include "menus.h"
+#include "accounts.h"
 
 char text[1000]; //Text array Global variable
 char addressTo[100]; //AddressTo global variable for sending
@@ -19,17 +20,27 @@ char *choicesLog[] = { //Choices for logging menu
         (char *) NULL,
 };
 
+char *choicesAccount[] = {
+        "List accounts",
+        "Add account",
+        "Delete account",
+        "Exit",
+        (char *) NULL,
+};
 
 int homeMenu() {
     statusFlag = 0;
     /*Create the variables for homeMenu*/
     ITEM **menuItems;
     ITEM **loginItems;
+    ITEM **accountItem;
     MENU *menu;
     MENU *login;
+    MENU *account;
     WINDOW *menuWindow;
     WINDOW *loginWindow;
-    int countChoicesMenu, countChoicesLogin, i, character;
+    WINDOW *accountWindow;
+    int countChoicesMenu, countChoicesLogin, countChoicesAccount, i, character;
 
 
     /* Initialize curses */
@@ -51,13 +62,17 @@ int homeMenu() {
     //Give the sizes
     countChoicesMenu = sizeof(choicesMenu) / sizeof(choicesMenu[0]);
     countChoicesLogin = sizeof(choicesLog) / sizeof(choicesLog[0]);
+    countChoicesAccount = sizeof(choicesAccount) / sizeof(choicesAccount[0]);
 
     //Dynamic memory allocation
     menuItems = (ITEM **) calloc((unsigned) (countChoicesMenu + 1), sizeof(ITEM *));
     loginItems = (ITEM **) calloc((unsigned) (countChoicesLogin + 1), sizeof(ITEM *));
-    if (menuItems == NULL || loginItems == NULL) {
+    accountItem = (ITEM **) calloc((unsigned) (countChoicesAccount + 1), sizeof(ITEM *));
+
+    if (menuItems == NULL || loginItems == NULL || accountItem == NULL) {
         free(menuItems);
         free(loginItems);
+        free(accountItem);
         return 2;
     }
 
@@ -66,24 +81,30 @@ int homeMenu() {
         menuItems[i] = new_item(choicesMenu[i], choicesMenu[i]);
     for (i = 0; i < countChoicesLogin; ++i)
         loginItems[i] = new_item(choicesLog[i], choicesLog[i]);
+    for (i = 0; i < countChoicesAccount; ++i)
+        accountItem[i] = new_item(choicesAccount[i], choicesAccount[i]);
 
     //Give its end a NULL pointer
     menuItems[countChoicesMenu] = (ITEM *) NULL;
     loginItems[countChoicesLogin] = (ITEM *) NULL;
+    accountItem[countChoicesAccount] = (ITEM *) NULL;
 
     /* Create menu */
     menu = new_menu(menuItems);
     login = new_menu(loginItems);
+    account = new_menu(accountItem);
 
     /* Create the window to be associated with the menu */
 
     //Set the menu size
     menuWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
     loginWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
+    accountWindow = newwin(ycoord - 2, xcoord - 2, 1, 1);
 
     //Enabling keypad
     keypad(menuWindow, TRUE);
     keypad(loginWindow, TRUE);
+    keypad(accountWindow, TRUE);
 
 
     /* Set main window and sub window */
@@ -94,14 +115,19 @@ int homeMenu() {
     set_menu_win(login, loginWindow);
     set_menu_sub(login, derwin(loginWindow, 10, (int) strlen(choicesLog[1]) + 2, 5,
                                (xcoord - (int) strlen(choicesLog[0])) / 2));
+    set_menu_win(account, accountWindow);
+    set_menu_sub(account, derwin(accountWindow, 10, (int) strlen(choicesAccount[0]) + 2, 5,
+                                 (xcoord - (int) strlen(choicesAccount[0])) / 2));
 
-    /* Set menu mark to the string " * " */
+    /* Set menu mark to the string " > " */
     set_menu_mark(menu, "> ");
     set_menu_mark(login, "> ");
+    set_menu_mark(account, "> ");
 
     /* Print a border around the main window and print a title */
     box(menuWindow, 0, 0);
     box(loginWindow, 0, 0);
+    box(accountWindow, 0, 0);
 
     char stringMenu[] = {"Welcome in my SMTP Client"};
     print_in_middle(menuWindow, 1, (int) (xcoord - strlen(stringMenu)) / 2, (int) strlen(stringMenu), stringMenu,
@@ -166,6 +192,50 @@ int homeMenu() {
                     box(menuWindow, 0, 0); //Create a box
                     refresh(); //Refresh
                     wrefresh(menuWindow); //Refresh the window
+                } else if (strcmp(choicesMenu[2], buffer) == 0) {
+                    unpost_menu(menu);
+                    clear();
+                    post_menu(account);
+                    pos_menu_cursor(account);
+                    wrefresh(accountWindow);
+                    box(accountWindow, 0, 0);
+                    int c;
+                    refresh();
+                    while ((c = wgetch(accountWindow)) != KEY_F(1)) {
+                        switch (c) {
+                            case KEY_DOWN:
+                                menu_driver(account, REQ_DOWN_ITEM);
+                                break;
+                            case KEY_UP:
+                                menu_driver(account, REQ_UP_ITEM);
+                                break;
+                            case 10: //Enter
+                                //Copy the current item name in a buffer for use
+                                strcpy(buffer, item_name(current_item(account)));
+
+                                //Wenn the customer choose the first item, what is E-mail
+                                if (strcmp(choicesAccount[0], buffer) == 0) { //List account
+                                    //Todo list account making a linked list.
+                                    readyAccounts();
+                                } else if (strcmp(choicesAccount[1], buffer) == 0) { //Add account
+                                    //TODO add account
+                                } else if (strcmp(choicesAccount[2], buffer) == 0) { //Delete account
+                                    //Delete accoun
+                                    writeOutAccount();
+                                }
+                            default:
+                                break;
+                        }
+                        wrefresh(accountWindow);
+                    }
+                    unpost_menu(account);
+                    clear();
+                    print_in_middle(menuWindow, 1, (int) (xcoord - strlen(stringMenu)) / 2, (int) strlen(stringMenu),
+                                    stringMenu, COLOR_PAIR(1)); //Print out the welcome message
+                    post_menu(menu); //Post menu again
+                    box(menuWindow, 0, 0); //Create a box
+                    refresh(); //Refresh
+                    wrefresh(menuWindow); //Refresh the window
                 } else if (strcmp(choicesMenu[3], buffer) == 0) { //When the customer choice exit
                     unpost_menu(menu); //Unpost menu
                     wrefresh(loginWindow); //Refresh the screen
@@ -211,9 +281,11 @@ int homeMenu() {
     unpost_menu(login); //Unpost the login
     free_menu(menu); //Free menu
     free_menu(login); //Free login
+    free_menu(account); //Free account
     for (i = 0; i < countChoicesMenu; ++i) { //Free all choices
         free_item(menuItems[i]);
         free_item(loginItems[i]);
+        free_item(accountItem[i]);
     }
     endwin(); //Close the window
     return 0;
@@ -236,7 +308,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
     post_menu(login);
     wrefresh(loginWindow);
 
-    char buffer[100]; //The working buffer for the current item
+    char buffer[50]; //The working buffer for the current item
     int exitFlag = 1; //A flag for exit
 
     while ((exitFlag) && (scanForScreen = wgetch(loginWindow)) != KEY_F(1)) {
