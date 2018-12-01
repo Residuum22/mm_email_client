@@ -25,10 +25,11 @@
 #include "smtp.h"
 #include <string.h>
 #include <stdlib.h>
+
+#include <stdio.h>
 #include <curl/curl.h>
 #include <time.h>
 
-char *mytext[7]; //Global variable for the email header
 
 struct upload_status { //How many lines read
     int lines_read;
@@ -58,7 +59,7 @@ static size_t payload_source(void *ptr, size_t size, size_t nmemb, void *userp)
     return 0;
 }
 
-int curlSmtpEmailSending(void)
+int curlSmtpEmailSending(int *errorFlag)
 {
     time_t now; //Make a time variable
     time(&now); //Get the current time
@@ -161,9 +162,17 @@ int curlSmtpEmailSending(void)
         res = curl_easy_perform(curl);
 
         /* Check for errors */
-        if(res != CURLE_OK)
-            fprintf(stderr, "curl_easy_perform() failed: %s\n", //Todo export error in a file
-                    curl_easy_strerror(res));
+        if(res != CURLE_OK){
+            FILE *output;
+            output =fopen("ConnectError.txt", "w");
+            fputs(date_buff, output);
+            fputc('\n', output);
+            fputs(curl_easy_strerror(res), output);
+            fputc('\n', output);
+            fputc('\n', output);
+            fclose(output);
+            *errorFlag = 1;
+        }
 
         /* Free the list of recipients */
         curl_slist_free_all(recipients);

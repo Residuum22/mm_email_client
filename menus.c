@@ -4,9 +4,6 @@ char text[1000]; //Text array Global variable
 char addressTo[100]; //AddressTo global variable for sending
 char subjectMail[50]; //A global variable for the mail subject
 
-int ycoord, xcoord;
-int statusFlag = 0;
-
 char *choicesMenu[] = { //Home menu choices list
         "Logining in Mail Account",
         "Sending an E-mail",
@@ -23,7 +20,8 @@ char *choicesLog[] = { //Choices for logging menu
 };
 
 
-void homeMenu() {
+int homeMenu() {
+    statusFlag = 0;
     /*Create the variables for homeMenu*/
     ITEM **menuItems;
     ITEM **loginItems;
@@ -33,6 +31,7 @@ void homeMenu() {
     WINDOW *loginWindow;
     int countChoicesMenu, countChoicesLogin, i, character;
 
+
     /* Initialize curses */
     initscr(); //Initialize screen
     start_color(); //Start colors
@@ -41,7 +40,10 @@ void homeMenu() {
     keypad(stdscr, TRUE); //screen can be edited with keypad
 
     getmaxyx(stdscr, ycoord, xcoord); //Get the size of the terminal
-    //TODO the terminal size must be changed when it it too small
+    if (ycoord < 24 || xcoord < 80) {  //If it is too small return with error code 1
+        endwin();
+        return 1;
+    }
 
     init_pair(1, COLOR_YELLOW, COLOR_BLACK); //Color setting
 
@@ -53,6 +55,11 @@ void homeMenu() {
     //Dynamic memory allocation
     menuItems = (ITEM **) calloc((unsigned) (countChoicesMenu + 1), sizeof(ITEM *));
     loginItems = (ITEM **) calloc((unsigned) (countChoicesLogin + 1), sizeof(ITEM *));
+    if (menuItems == NULL || loginItems == NULL) {
+        free(menuItems);
+        free(loginItems);
+        return 2;
+    }
 
     //Dynamic memory allocation for chices
     for (i = 0; i < countChoicesMenu; ++i)
@@ -127,17 +134,34 @@ void homeMenu() {
                     loginMenuWindow(login, loginWindow, COLOR_PAIR(1)); //Call loginMenuWindow, that call other menu
                     clear(); //Clear the last state
                     print_in_middle(menuWindow, 1, (int) (xcoord - strlen(stringMenu)) / 2, (int) strlen(stringMenu),
-                                    stringMenu, COLOR_PAIR(1)); //Print out the welcome message// ge
+                                    stringMenu, COLOR_PAIR(1)); //Print out the welcome message
                     box(menuWindow, 0, 0); //Print a box
                     post_menu(menu); //Post the menu
                     wrefresh(menuWindow); //Refresh the window
                     refresh(); //Refresh
 
                 } else if (strcmp(choicesMenu[1], buffer) == 0 && statusFlag) { //E-mail send, if logged
+                    int errorFlag = 0;
                     unpost_menu(menu); //Unpost menu
                     refresh(); //Refresh
-                    sendingEmail(); //Call sending email function
-                    curlSmtpEmailSending(); //Call curl to send //TODO error export
+                    creatingEmailText(); //Call sending email function
+                    curlSmtpEmailSending(&errorFlag); //Call curl to send, if error occured flag will be 1
+                    if (errorFlag) {
+                        clear(); //Clear screen
+                        mvprintw(ycoord / 2 - 5,
+                                 (int) (xcoord - strlen("E-mail hasn't sent, press ENTER and try again")) / 2, "%s",
+                                 "E-mail hasn't sent, press ENTER and try again"); //Print this out when ERROR
+                        while (getch() != '\n'); //Loop until enter
+                    } else {
+                        clear(); //Clear screen
+                        mvprintw(ycoord / 2 - 5,
+                                 (int) (xcoord - strlen("E-mail has sent, press ENTER to continue")) / 2, "%s",
+                                 "E-mail has sent, press ENTER to continue"); //Print this out when OK
+                        while (getch() != '\n'); //Loop until enter
+                    }
+                    clear(); //Clear the last state
+                    print_in_middle(menuWindow, 1, (int) (xcoord - strlen(stringMenu)) / 2, (int) strlen(stringMenu),
+                                    stringMenu, COLOR_PAIR(1)); //Print out the welcome message
                     post_menu(menu); //Post menu again
                     box(menuWindow, 0, 0); //Create a box
                     refresh(); //Refresh
@@ -192,6 +216,7 @@ void homeMenu() {
         free_item(loginItems[i]);
     }
     endwin(); //Close the window
+    return 0;
 }
 
 
@@ -248,9 +273,11 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
                         refresh(); //Refresh it
                         mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s",
                                  "E-mail:"); //Write to screen this string
-                        //todo here I must put new line when the string longer than the screen wide
-                        mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(UID)) / 2, "%s",
-                                 UID); //Write to screen the current ID
+                        if (strlen(UID) < xcoord - 15) { //If the screen is too small there will be wrong input
+                            mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(UID)) / 2, "%s",
+                                     UID); //Write to screen the current ID
+                        } else
+                            break;
                         refresh(); //Refresh the screen
                         move(ycoord / 2 - 4,
                              ((int) (xcoord - strlen(UID)) / 2) + counter); //Move the cursor after the last character
@@ -321,7 +348,7 @@ void loginMenuWindow(MENU *login, WINDOW *loginWindow, chtype color) {
     unpost_menu(login); //When I want to do nothing here unpost the login menu and go back
 }
 
-void sendingEmail() {
+void creatingEmailText() {
     int counter = 0; //Basic counter for the caracters
     clear(); //Clear the screen
     mvprintw(LINES - ycoord + 3, 4, "%s", "TO: "); //Print to screen this
