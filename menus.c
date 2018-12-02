@@ -30,6 +30,7 @@ char *choicesAccount[] = {
 
 int homeMenu() {
     statusFlag = 0;
+    accountMember *list = NULL;
     /*Create the variables for homeMenu*/
     ITEM **menuItems;
     ITEM **loginItems;
@@ -193,15 +194,22 @@ int homeMenu() {
                     refresh(); //Refresh
                     wrefresh(menuWindow); //Refresh the window
                 } else if (strcmp(choicesMenu[2], buffer) == 0) {
+                    if (list == NULL) list = makingLinkedListFromAccounts();
+                    int exitFlagAccount = 0;
+                    char stringAccounts[] = "Accounts";
                     unpost_menu(menu);
                     clear();
+                    print_in_middle(accountWindow, 1, (int) (xcoord - strlen(stringAccounts)) / 2,
+                                    (int) strlen(stringAccounts),
+                                    stringAccounts, COLOR_PAIR(1));
                     post_menu(account);
                     pos_menu_cursor(account);
                     wrefresh(accountWindow);
                     box(accountWindow, 0, 0);
                     int c;
                     refresh();
-                    while ((c = wgetch(accountWindow)) != KEY_F(1)) {
+                    wrefresh(accountWindow);
+                    while (!exitFlagAccount && ((c = wgetch(accountWindow)) != KEY_F(1))) {
                         switch (c) {
                             case KEY_DOWN:
                                 menu_driver(account, REQ_DOWN_ITEM);
@@ -212,17 +220,104 @@ int homeMenu() {
                             case 10: //Enter
                                 //Copy the current item name in a buffer for use
                                 strcpy(buffer, item_name(current_item(account)));
-
                                 //Wenn the customer choose the first item, what is E-mail
                                 if (strcmp(choicesAccount[0], buffer) == 0) { //List account
-                                    //Todo list account making a linked list.
-                                    readyAccounts();
+                                    unpost_menu(account);
+                                    clear();
+                                    refresh();
+                                    int ii;
+                                    accountMember *temp = list;
+                                    for (ii = 0; ii < 10 && temp != NULL != 0; ++ii, temp = temp->next) {
+                                        mvprintw(10 + ii * 1, 5, temp->name);
+                                        mvprintw(10 + ii * 1, 35, temp->emailAddress);
+                                    }
+                                    mvprintw(5, (xcoord - (int) strlen("Press ENTER to continue!")) / 2,
+                                             "Press ENTER to continue!");
+                                    refresh();
+                                    while (getch() != '\n');
                                 } else if (strcmp(choicesAccount[1], buffer) == 0) { //Add account
-                                    //TODO add account
+                                    char bufferName[30];
+                                    char bufferEmail[100];
+                                    int i;
+                                    for (i = 0; i < 30; ++i) bufferName[i] = '\0';
+                                    for (i = 0; i < 100; ++i) bufferEmail[i] = '\0';
+                                    char scanForCharacter;
+                                    int counter = 0;
+                                    clear();
+                                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("New Account Name:")) / 2, "%s",
+                                             "New Account Name:");
+                                    move(ycoord / 2 - 4, xcoord / 2);
+                                    refresh();
+                                    while ((scanForCharacter = (char) getch()) != '\n') { //Waiting for a character
+                                        if (scanForCharacter == 7) { //If it is the back button
+                                            if (counter > 0) //Counter cant be minus number
+                                                bufferName[--counter] = '\0'; //If I clear fill with nulls
+                                        } else if (counter < 30) //The password can be max 256 character long (gmail)
+                                            bufferName[counter++] = scanForCharacter;
+                                        clear(); //Clear the screen
+                                        refresh(); //Refresh it
+                                        mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("New Account Name:")) / 2, "%s",
+                                                 "New Account Name:"); //Write to screen this string
+                                        if (strlen(bufferName) <
+                                            xcoord - 15) { //If the screen is too small there will be wrong input
+                                            mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(bufferName)) / 2, "%s",
+                                                     bufferName); //Write to screen the current ID
+                                        } else
+                                            break;
+                                        refresh(); //Refresh the screen
+                                        move(ycoord / 2 - 4,
+                                             ((int) (xcoord - strlen(bufferName)) / 2) +
+                                             counter); //Move the cursor after the last character
+                                    }
+                                    clear();
+                                    mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s",
+                                             "E-mail:");
+                                    move(ycoord / 2 - 4, xcoord / 2);
+                                    refresh();
+                                    counter = 0;
+                                    while ((scanForCharacter = (char) getch()) != '\n') { //Waiting for a character
+                                        if (scanForCharacter == 7) { //If it is the back button
+                                            if (counter > 0) //Counter cant be minus number
+                                                bufferEmail[--counter] = '\0'; //If I clear fill with nulls
+                                        } else if (counter < 100) //The password can be max 256 character long (gmail)
+                                            bufferEmail[counter++] = scanForCharacter;
+                                        clear(); //Clear the screen
+                                        refresh(); //Refresh it
+                                        mvprintw(ycoord / 2 - 5, (int) (xcoord - strlen("E-mail:")) / 2, "%s",
+                                                 "E-mail:"); //Write to screen this string
+                                        if (strlen(bufferEmail) <
+                                            xcoord - 15) { //If the screen is too small there will be wrong input
+                                            mvprintw(ycoord / 2 - 4, (int) (xcoord - strlen(bufferEmail)) / 2, "%s",
+                                                     bufferEmail); //Write to screen the current ID
+                                        } else
+                                            break;
+                                        refresh(); //Refresh the screen
+                                        move(ycoord / 2 - 4,
+                                             ((int) (xcoord - strlen(bufferEmail)) / 2) +
+                                             counter); //Move the cursor after the last character
+                                    }
+                                    post_menu(account);
+                                    box(accountWindow, 0, 0);
+                                    pos_menu_cursor(account);
+                                    wrefresh(accountWindow);
+                                    refresh();
+                                    addItemToList(&list, bufferName, bufferEmail);
                                 } else if (strcmp(choicesAccount[2], buffer) == 0) { //Delete account
-                                    //Delete accoun
-                                    writeOutAccount();
+                                    writeOutAccount(list); /*TODO:Can delete a file from a list, how can I see the next
+                                        * TODO: watch the next elemet pointer than watch delete than make the előőző
+                                        * elemt the next elemet*/
+                                } else if (strcmp(choicesAccount[3], buffer) == 0) {
+                                    exitFlagAccount = 1;
                                 }
+                                clear();
+                                post_menu(account);
+                                pos_menu_cursor(account);
+                                wrefresh(accountWindow);
+                                box(accountWindow, 0, 0);
+                                print_in_middle(loginWindow, 1, (int) (xcoord - strlen(stringAccounts)) / 2,
+                                                (int) strlen(stringAccounts),
+                                                stringAccounts, COLOR_PAIR(1));
+                                refresh();
                             default:
                                 break;
                         }
@@ -282,6 +377,7 @@ int homeMenu() {
     free_menu(menu); //Free menu
     free_menu(login); //Free login
     free_menu(account); //Free account
+    freeList(list);
     for (i = 0; i < countChoicesMenu; ++i) { //Free all choices
         free_item(menuItems[i]);
         free_item(loginItems[i]);
