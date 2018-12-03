@@ -18,11 +18,7 @@ int writeOutAccount(accountMember *head);
 
 char* readInAccount();
 
-int addAccount();
-
-int deleteAccount();
-
-int listAccount();
+int deleteAccount(int number, accountMember **list);
 
 void freeList(accountMember *head);
 

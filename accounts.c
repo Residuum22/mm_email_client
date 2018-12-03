@@ -4,7 +4,6 @@
 #include <string.h>
 
 #define FILE_NAME "AccountList.txt"
-#define FILE_OUT "Haloho.txt"
 
 
 
@@ -12,7 +11,7 @@ int writeOutAccount(accountMember *head) {
     FILE *output;
     unsigned len;
     int i;
-    output = fopen(FILE_OUT, "w");
+    output = fopen(FILE_NAME, "w");
     if(output == NULL){
         fclose(output);
         return 2;
@@ -73,17 +72,26 @@ char *readInAccount() {
     return buffer;
 }
 
-int addAccount() {
 
+int deleteAccount(int number, accountMember **head) {
+    if (*head == NULL) return 0;
+    accountMember *temp, *tempk;
+    int i;
+    if (number == 0){
+        temp = *head;
+        *head = (*head)->next;
+        free(temp);
+        return 0;
+    }
+    for(i = 0, temp = *head; i <= number && temp != NULL; tempk = temp, temp = temp->next, ++i){
+        if (number == i){
+            (tempk->next) = (temp->next);
+            free(temp);
+            return 0;
+        }
+    }
 }
 
-int deleteAccount() {
-
-}
-
-int listAccount() {
-
-}
 
 accountMember *makingLinkedListFromAccounts() {
     accountMember *list = NULL;

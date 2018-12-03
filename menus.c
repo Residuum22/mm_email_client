@@ -302,10 +302,39 @@ int homeMenu() {
                                     wrefresh(accountWindow);
                                     refresh();
                                     addItemToList(&list, bufferName, bufferEmail);
+                                    writeOutAccount(list);
                                 } else if (strcmp(choicesAccount[2], buffer) == 0) { //Delete account
-                                    writeOutAccount(list); /*TODO:Can delete a file from a list, how can I see the next
-                                        * TODO: watch the next elemet pointer than watch delete than make the előőző
-                                        * elemt the next elemet*/
+                                    unpost_menu(account);
+                                    clear();
+                                    refresh();
+                                    int ii;
+                                    char scan;
+                                    accountMember *temp = list;
+                                    for (ii = 0; ii < 10 && temp != NULL != 0; ++ii, temp = temp->next) {
+                                        mvprintw(10 + ii * 1, 3, "%d:", ii);
+                                        mvprintw(10 + ii * 1, 5, temp->name);
+                                        mvprintw(10 + ii * 1, 35, temp->emailAddress);
+                                    }
+                                    mvprintw(5, (xcoord - (int) strlen("Press the NUMBER to delete!")) / 2,
+                                             "Press the NUMBER to delete!");
+                                    refresh();
+                                    while ((scan = (char) getch()) != '\n'){
+                                        if (scan >= 48 && scan <= 57){
+                                            deleteAccount(scan - 48, &list);
+                                            writeOutAccount(list);
+                                            clear();
+                                            refresh();
+                                            for (ii = 0, temp = list; ii < 10 && temp != NULL != 0; ++ii, temp = temp->next) {
+                                                mvprintw(10 + ii * 1, 2, "%d: ", ii);
+                                                mvprintw(10 + ii * 1, 5, temp->name);
+                                                mvprintw(10 + ii * 1, 35, temp->emailAddress);
+                                            }
+                                            mvprintw(5, (xcoord - (int) strlen("Press the NUMBER to delete!")) / 2,
+                                                     "Press the NUMBER to delete!");
+                                            refresh();
+                                        }
+                                    }
+                                    writeOutAccount(list);
                                 } else if (strcmp(choicesAccount[3], buffer) == 0) {
                                     exitFlagAccount = 1;
                                 }
